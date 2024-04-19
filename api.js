@@ -28,6 +28,13 @@ app.use((req,res,next)=>{
 
 const connection = mysql.createConnection(mysql_config);
 
+//inserindo o tratamento dos params-----------------
+app.use(express.json());
+
+app.use(express.urlencoded({extended:true}))
+
+//---------------------------------------------------
+
 app.use(cors());
 
 //rotas 
@@ -97,6 +104,38 @@ app.delete('/tasks/:id/delete',(req,res)=>{
         }else{
             res.json(functions.response('Erro',err.message,0,null));
         }
+    })
+})
+
+//endpoint para inserir uma nova task
+app.post('/tasks/create',(req,res)=>{
+    //como a task é um texto  e o status também
+    //através da rota adicionar midlewarepara isso
+    const post_data =req.body;
+
+    if(post_data ==undefined){
+        res.json(functions.response('Atenção',"Sem dados de uma nova task",0,null));
+        return
+    }
+
+    //checar se os dados informados são inválidos
+    if(post_data.task==undefined || post_data.status ==undefined){
+        res.json(functions.response('Atenção',"Dados inválidos",0,null));
+        return 
+    }
+
+    //pegar dos dados da task
+    const task = post_data.task;
+    const status =post_data.status;
+
+    //inserir a task
+    connection.query('INSERT INTO tasks (task,status,created_at,updated_at) VALUES(?,?,NOW(),NOW())',[task,status],(err,rows)=>{
+        if(!err){
+            res.json(functions.response("Sucesso","Task cadastrada com sucesso",rows.affectedRows,null));
+        }else{
+            res.json(functions.response('Erro',err.message,0,null));
+        }
+
     })
 })
 
