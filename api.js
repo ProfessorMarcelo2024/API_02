@@ -1,4 +1,4 @@
-// 17/04  criar dois novos endpoints
+// 22/04  atualizar o texto de uma task
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
@@ -28,12 +28,12 @@ app.use((req,res,next)=>{
 
 const connection = mysql.createConnection(mysql_config);
 
-//inserindo o tratamento dos params-----------------
+
 app.use(express.json());
 
 app.use(express.urlencoded({extended:true}))
 
-//---------------------------------------------------
+
 
 app.use(cors());
 
@@ -109,8 +109,7 @@ app.delete('/tasks/:id/delete',(req,res)=>{
 
 //endpoint para inserir uma nova task
 app.post('/tasks/create',(req,res)=>{
-    //como a task é um texto  e o status também
-    //através da rota adicionar midlewarepara isso
+   
     const post_data =req.body;
 
     if(post_data ==undefined){
@@ -118,17 +117,16 @@ app.post('/tasks/create',(req,res)=>{
         return
     }
 
-    //checar se os dados informados são inválidos
+
     if(post_data.task==undefined || post_data.status ==undefined){
         res.json(functions.response('Atenção',"Dados inválidos",0,null));
         return 
     }
 
-    //pegar dos dados da task
+
     const task = post_data.task;
     const status =post_data.status;
 
-    //inserir a task
     connection.query('INSERT INTO tasks (task,status,created_at,updated_at) VALUES(?,?,NOW(),NOW())',[task,status],(err,rows)=>{
         if(!err){
             res.json(functions.response("Sucesso","Task cadastrada com sucesso",rows.affectedRows,null));
@@ -139,9 +137,45 @@ app.post('/tasks/create',(req,res)=>{
     })
 })
 
+// criando o endpoint para atualizar o texto de uma task
+//o texto da task será enviado através do body
+app.put('/tasks/:id/update',(req,res)=>{
+
+    //pegando os dados da requisição
+    const id = req.params.id;
+    const post_data =req.body;
+
+    const task = post_data.task;
+    const status =post_data.status;
+
+    //checar se os dados estão vazios
+    if(post_data ==undefined){
+        res.json(functions.response('Atenção','Sem dados para atualizar a task', 0, null));
+        return;
+    }
+    if(post_data.task ==undefined || post_data.status ==undefined){
+        res.json(functions.response('Atenção','Dados inválidos', 0, null));
+        return;
+    }
+    connection.query('UPDATE tasks SET task =?, status =?, updated_at =NOW() WHERE id = ?',[task,status,id],(err,rows)=>{
+        if(!err){
+            if(rows.affectedRows>0){
+                res.json(functions.response('Sucesso','Task atualizada com sucesso!', rows.affectedRows, null));
+            }else{
+                res.json(functions.response('Atenção','Task não foi encontrada', 0, null));
+            }
+        }else{
+            res.json(functions.response('Erro',err.message, 0, null));
+        }
+    })
+
+})
+
 
 
 app.use((req,res)=>{
     res.json(functions.response('atenção',
                 'Rota não encontrada',0,null))
 })
+
+
